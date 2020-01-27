@@ -9,6 +9,7 @@ from .base import JobExecutor, JobCancelledError, sync_to_async, AsyncAdapter
 from .scheduler import Worker, WorkerSet
 from libertem.common.backend import set_use_cpu, set_use_cuda
 from libertem.utils.devices import detect
+from libertem.utils.async_utils import adjust_event_loop_policy
 
 
 log = logging.getLogger(__name__)
@@ -352,6 +353,12 @@ class DaskJobExecutor(CommonDaskMixin, JobExecutor):
         DaskJobExecutor
             the connected JobExecutor
         """
+
+        # Distributed doesn't adjust the event loop policy when being run
+        # from within pytest as of version 2.21.0. For that reason we
+        # adjust the policy ourselves here.
+        adjust_event_loop_policy()
+
         if spec is None:
             spec = cluster_spec(**detect())
         if client_kwargs is None:
